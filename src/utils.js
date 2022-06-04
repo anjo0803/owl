@@ -56,5 +56,9 @@ module.exports = {
      * @param {string} nid Value to be used as a NID in the database
      * @returns The standardized version of the provided NID
      */
-    unifyNID: (nid) => nid.toLowerCase().replace(/ /g, '_')
+    unifyNID: (nid) => nid.toLowerCase().replace(/ /g, '_'),
+
+
+    /* ===== Miscellaneous Functions ===== */
+
 };

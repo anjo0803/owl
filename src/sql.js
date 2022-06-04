@@ -24,6 +24,7 @@ const db = new sqlite3.Database('./owl.db', (err) => {
     if(err) utils.printError(`Failed to connect to database: ${err}`);
     else utils.print('Successfully connected to database!');
 });
+process.on('exit', () => db.close(() => utils.print('Disconnected from database.')))
 
 // Ensure that a database file exists and that it follows the correct schema
 if(!fs.existsSync('./owl.db')) {

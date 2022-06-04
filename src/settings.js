@@ -5,11 +5,13 @@
  */
 
 module.exports = {
+    VERSION: 0.1,
     DEBUG: true,
-    BALLOTS: {
+    STANCES: {
         FOR: 0,
         AGAINST: 1,
-        ABSTAIN: 2
+        ABSTAIN: 2,
+        PLEBISCITE: 3
     },
     TABLES: {
         debate: {
