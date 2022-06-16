@@ -1,7 +1,6 @@
 const { NationShard, WorldShard, WAShard, DispatchCategory, DispatchSubcategory } = require('./enums');
 const { APIInstanceError, AuthenticationError, MissingArgumentsError, NSError } = require('./exceptions');
 const Responses = require('./responses');
-/* const fetch = require('node-fetch'); */
 
 const parser = new (require('xml2js').Parser)();
 

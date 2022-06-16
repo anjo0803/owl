@@ -415,6 +415,8 @@ exports.NationPrivateShard = Object.freeze({
  * @enum
  */
 exports.RegionShard = Object.freeze({
+    BANNER: 'banner',
+    BANNER_CREATOR: 'bannerby',
     CENSUS: 'census',
     CENSUS_RANKS: 'censusranks',
     DATABASE_ID: 'dbid',

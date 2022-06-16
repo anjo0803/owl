@@ -671,6 +671,8 @@ class Nation {
 
 class Region {
     /* Shards Supported: */
+    #banner;
+    #bannerby;
     #census;
     #censusranks;
     #dbid;
@@ -709,6 +711,8 @@ class Region {
 
             /* ===== Primitive properties ===== */
 
+            case RegionShard.BANNER:                this.#banner        = txt(res, 'BANNER'); break;
+            case RegionShard.BANNER_CREATOR:        this.#bannerby      = txt(res, 'BANNERBY'); break;
             case RegionShard.DATABASE_ID:           this.#dbid          = txt(res, 'DBID'); break;
             case RegionShard.DELEGATE:              this.#delegate      = txt(res, 'DELEGATE'); break;
             case RegionShard.DELEGATE_AUTHORITY:    this.#delegateauth  = txt(res, 'DELEGATEAUTH')?.split(/(?=[\s\S])/gu); break;
@@ -851,6 +855,10 @@ class Region {
         }
     }
 
+    /** ID of this region's regional banner. */
+    get banner()            { return this.#banner }
+    /** Name of the nation that uploaded this region's banner. */
+    get bannerCreator()     { return this.#bannerby }
     /** List of average regional performance on the requested scales. */
     get censusScores()      { return this.#census }
     /** Rankings of regional nations on the requested census scale. */
@@ -1085,40 +1093,13 @@ class WorldAssembly {
             case WAShard.PROPOSALS:
                 let proposalC = res['PROPOSALS'];
                 if(proposalC?.length == 1) {
-                    /** @private */
                     this.#proposals = [];
-                    for(let proposal of proposalC[0]['PROPOSAL']) this.#proposals.push({
-                        id: proposal['$'].id,
-                        approvals: txt(proposal, 'APPROVALS')?.split(/\:/gm) || [],
-                        author: txt(proposal, 'PROPOSED_BY'),
-                        coauthors: txtArr(proposal['COAUTHOR'], 'N'),
-                        category: txt(proposal, 'CATEGORY'),
-                        submitted: num(proposal, 'CREATED'),
-                        text: txt(proposal, 'DESC'),
-                        title: txt(proposal, 'NAME'),
-                        option: txt(proposal, 'OPTION')
-                    });
+                    for(let proposal of proposalC[0]['PROPOSAL']) this.#proposals.push(new WAProposal(proposal, res['$']?.council));
                 }
                 break;
             case WAShard.RESOLUTION_AT_VOTE:
                 let resolutionC = res['RESOLUTION'];
-                if(resolutionC?.length == 1) this.#resolution = {
-                    proposalID: txt(resolutionC[0], 'ID'),
-                    author: txt(resolutionC[0], 'PROPOSED_BY'),
-                    coauthors: txtArr(resolutionC[0]['COAUTHOR'], 'N'),
-                    category: txt(resolutionC[0], 'CATEGORY'),
-                    submitted: num(resolutionC[0], 'CREATED'),
-                    text: txt(resolutionC[0], 'DESC'),
-                    title: txt(resolutionC[0], 'NAME'),
-                    option: txt(resolutionC[0], 'OPTION'),
-                    votingStarted: num(resolutionC[0], 'PROMOTED'),
-                    votes: {
-                        tallyFor: num(resolutionC[0], 'TOTAL_VOTES_FOR'),
-                        nationsFor: num(resolutionC[0], 'TOTAL_NATIONS_FOR'),
-                        tallyAgainst: num(resolutionC[0], 'TOTAL_VOTES_AGAINST'),
-                        nationsAgainst: num(resolutionC[0], 'TOTAL_NATIONS_AGAINST')
-                    }
-                }
+                if(resolutionC?.length == 1) this.#resolution = new WAProposal(resolutionC[0], res['$']?.council);
                 break;
             case WAShard.DELEGATE_VOTE_LOG:
                 let dellogC = res['DELLOG'];
@@ -1238,6 +1219,71 @@ class Dispatch {
     get text()      { return this.#text }
 }
 
+class WAProposal {
+    #id;
+    #council;
+    #approvals;
+    #proposedBy;
+    #coauthors;
+    #category;
+    #option;
+    #created;
+    #desc;
+    #name;
+    #promoted;
+    #votes;
+    #legality;
+
+    constructor(base, councilID) {
+        this.#id = txt(base, 'ID');
+        this.#council = parseInt(councilID);
+        this.#approvals = txt(base, 'APPROVALS')?.split(/\:/gm) || [];
+        this.#proposedBy = txt(base, 'PROPOSED_BY');
+        this.#coauthors = txtArr(base['COAUTHOR'], 'N') || [];
+        this.#category = txt(base, 'CATEGORY');
+        this.#created = num(base, 'CREATED');
+        this.#desc = txt(base, 'DESC');
+        this.#name = txt(base, 'NAME');
+        this.#option = txt(base, 'OPTION');
+        this.#promoted = num(base, 'PROMOTED');
+        this.#votes = this.#promoted == undefined ? undefined : {
+            tallyFor: num(base, 'TOTAL_VOTES_FOR'),
+            nationsFor: num(base, 'TOTAL_NATIONS_FOR'),
+            tallyAgainst: num(base, 'TOTAL_VOTES_AGAINST'),
+            nationsAgainst: num(base, 'TOTAL_NATIONS_AGAINST')
+        };
+        let baseLegal = base['GENSEC'];
+        if(baseLegal?.length == 1) {
+            let log = [];
+            for(let e of baseLegal[0]['LOG'][0]['ENTRY']) log.push({
+                member: txt(e, 'NATION'),
+                vote: txt(e, 'DECISION'),
+                reason: txt(e, 'REASON'),
+                timestamp: num(e, 'T')
+            });
+            this.#legality = {
+                legal: txtArr(baseLegal[0]['LEGAL'], 'LEGAL'),
+                illegal: txtArr(baseLegal[0]['ILLEGAL'], 'ILLEGAL'),
+                discard: txtArr(baseLegal[0]['DISCARD'], 'DISCARD')
+            };
+        }
+    }
+
+    get id()            { return this.#id }
+    get council()       { return this.#council }
+    get approvals()     { return this.#approvals }
+    get author()        { return this.#proposedBy }
+    get coauthors()     { return this.#coauthors }
+    get category()      { return this.#category }
+    get submitted()     { return this.#created }
+    get text()          { return this.#desc }
+    get title()         { return this.#name }
+    get option()        { return this.#option }
+    get votingStarted() { return this.#promoted }
+    get votes()         { return this.#votes }
+    get legality()      { return this.#legality }
+}
+
 class AnsweredIssue {
     #headlines;
     #reclassifications;
@@ -1311,6 +1357,6 @@ exports.Nation          = Nation;
 exports.Region          = Region;
 exports.World           = World;
 exports.WorldAssembly   = WorldAssembly;
-exports.Dispatch        = Dispatch;
 
 exports.AnsweredIssue   = AnsweredIssue;
+exports.WAProposal      = WAProposal;

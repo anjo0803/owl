@@ -6,6 +6,7 @@ const { NSError,
         InvalidCredentialsError, 
         UserAgentError } = require('./exceptions');
 const { NationPrivateShard } = require('./enums');
+const fetch = require('node-fetch').default;
 
 class NSAPI {
     #useragent;
@@ -149,8 +150,6 @@ class NSAPI {
 
         // Make sure to meet the ratelimit, then send the request
         await this.#complyWithLimit();
-        console.log(body);
-        console.log(request.loginCredentials);
         return fetch('https://www.nationstates.net/cgi-bin/api.cgi', {
             method: 'POST',
             headers: headers,
